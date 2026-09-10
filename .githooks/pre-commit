@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+npm run scan:secrets
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo 'Install Gitleaks before committing; staged secret scanning is required.' >&2
+  exit 1
+fi
+gitleaks git --pre-commit --staged --redact

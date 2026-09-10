@@ -1,0 +1,6 @@
+package-lock.json
+src-tauri/target
+src-tauri/gen
+Cargo.lock
+dist
+node_modules
