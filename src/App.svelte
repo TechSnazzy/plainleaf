@@ -26,7 +26,6 @@
     systemDark = $state(false);
   let sample = $state(false),
     revision = $state(0),
-    menu = $state(false),
     busy = $state(false);
   let error = $state(''),
     prompt = $state(false),
@@ -60,7 +59,7 @@
   function dismissPopovers(e: PointerEvent) {
     if (!(e.target instanceof Element) || e.target.closest('[data-popover]'))
       return;
-    menu = settings = headerMenu = false;
+    settings = headerMenu = false;
   }
   let editor: EditorView | undefined;
   let rich: RichHandle | undefined;
@@ -139,7 +138,6 @@
   async function action(task: () => Promise<void>) {
     if (busy || prompt) return;
     busy = true;
-    menu = false;
     try {
       await task();
     } catch (e) {
@@ -203,7 +201,6 @@
   }
   function toggle() {
     mode = mode === 'read' ? 'edit' : 'read';
-    menu = false;
     if (mode === 'edit') {
       if (editor && editor.state.sliceDoc() !== text) {
         syncingSource = true;
@@ -224,7 +221,6 @@
   function format(kind: string) {
     if (mode === 'read') {
       rich?.format(kind);
-      menu = false;
       return;
     }
     if (!editor) return;
@@ -273,12 +269,10 @@
         .join('\n');
       editor.dispatch({ changes: { from: start, to: end, insert } });
     }
-    menu = false;
     editor.focus();
   }
   function keyboard(e: KeyboardEvent) {
     if (e.key === 'Escape') {
-      menu = false;
       showFind = false;
       settings = false;
       headerMenu = false;
@@ -416,6 +410,41 @@
 <svelte:window onkeydown={keyboard} onpointerdown={dismissPopovers} />
 <div class:dark class="app" style:--reading-size={`${zoom}px`}>
   <header class="app-header" data-display={toolbarDisplay}>
+    <div class="document-tools tool-group" role="group" aria-label="Document">
+      <button
+        class="tool-button"
+        aria-label="New document"
+        title="New document (⌘ / Ctrl N)"
+        disabled={busy}
+        onclick={newDocument}
+        ><Icon name="new" /><span class="tool-label">New</span></button
+      >
+      <button
+        class="tool-button"
+        aria-label="Open a document"
+        title="Open… (⌘ / Ctrl O)"
+        disabled={busy}
+        onclick={openDocument}
+        ><Icon name="open" /><span class="tool-label">Open</span></button
+      >
+      <button
+        class="tool-button"
+        aria-label="Save"
+        title="Save (⌘ / Ctrl S)"
+        disabled={busy}
+        onclick={() => action(async () => void (await save()))}
+        ><Icon name="save" /><span class="tool-label">Save</span></button
+      >
+      <button
+        class="tool-button"
+        aria-label="Save as a copy"
+        title="Save as…"
+        disabled={busy}
+        onclick={() => action(async () => void (await save(true)))}
+        ><Icon name="save-as" /><span class="tool-label">Save as</span></button
+      >
+    </div>
+    <div class="tool-divider" aria-hidden="true"></div>
     <div class="format-tools tool-group" role="group" aria-label="Formatting">
       {#each formats as [kind, label]}
         <button
@@ -498,10 +527,7 @@
           aria-label="Settings"
           title="Settings"
           aria-expanded={settings}
-          onclick={() => {
-            settings = !settings;
-            menu = false;
-          }}
+          onclick={() => (settings = !settings)}
           ><Icon name="settings" /><span class="tool-label">Settings</span
           ></button
         >
@@ -526,43 +552,6 @@
           </aside>
         {/if}
       </div>
-      <div class="popover-anchor" data-popover>
-        <button
-          class="tool-button"
-          aria-label="Document options"
-          title="Document options"
-          aria-expanded={menu}
-          onclick={() => {
-            menu = !menu;
-            settings = false;
-          }}
-          ><Icon name="more" /><span class="tool-label">Document</span></button
-        >
-        {#if menu}
-          <aside class="popover" aria-label="Document options">
-            <button onclick={newDocument} disabled={busy}
-              >New document <kbd>⌘ / Ctrl N</kbd></button
-            >
-            <button onclick={openDocument} disabled={busy}
-              >Open… <kbd>⌘ / Ctrl O</kbd></button
-            >
-            <button
-              onclick={() =>
-                action(async () => {
-                  await save();
-                })}
-              disabled={busy}>Save <kbd>⌘ / Ctrl S</kbd></button
-            >
-            <button
-              onclick={() =>
-                action(async () => {
-                  await save(true);
-                })}
-              disabled={busy}>Save as…</button
-            >
-          </aside>
-        {/if}
-      </div>
     </div>
     <div class="popover-anchor header-overflow" data-popover>
       <button
@@ -572,7 +561,7 @@
         aria-expanded={headerMenu}
         onclick={() => {
           headerMenu = !headerMenu;
-          menu = settings = false;
+          settings = false;
         }}><Icon name="header-menu" /></button
       >
       {#if headerMenu}
@@ -637,18 +626,6 @@
               >
             {/each}
           </fieldset>
-          <div class="compact-documents">
-            <button onclick={newDocument} disabled={busy}>New</button>
-            <button onclick={openDocument} disabled={busy}>Open…</button>
-            <button
-              onclick={() => action(async () => void (await save()))}
-              disabled={busy}>Save</button
-            >
-            <button
-              onclick={() => action(async () => void (await save(true)))}
-              disabled={busy}>Save as…</button
-            >
-          </div>
         </aside>
       {/if}
     </div>

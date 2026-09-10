@@ -20,6 +20,11 @@
     settings: 'M4 6h16M4 12h16M4 18h16M8 4v4M16 10v4M10 16v4',
     more: 'M5 12h.01M12 12h.01M19 12h.01',
     'header-menu': 'M5 7h14M5 12h14M5 17h14',
+    new: 'M6 3h8l5 5v13H6z M14 3v5h5',
+    open: 'M3 7h6l2 2h10v10H3z',
+    save: 'M4 4h13l3 3v13H4z M8 4v6h7V4 M8 14h7v6H8',
+    'save-as':
+      'M4 4h13l3 3v13H4z M8 4v6h7V4 M8 14h7v6H8 M20.5 18.5v4M18.5 20.5h4',
   };
 </script>
 

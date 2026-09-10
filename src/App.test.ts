@@ -54,10 +54,6 @@ describe('two writing modes', () => {
   it('defaults to 18px and supports writing sizes up to 64px without changing text', () => {
     const app = document.querySelector<HTMLElement>('.app')!;
     expect(app.style.getPropertyValue('--reading-size')).toBe('18px');
-    document
-      .querySelector<HTMLButtonElement>('[aria-label="Document options"]')!
-      .click();
-    flushSync();
     const increase = document.querySelector<HTMLButtonElement>(
       '[aria-label="Increase text size"]',
     )!;
@@ -113,7 +109,8 @@ describe('two writing modes', () => {
     expect(compact?.textContent).toContain('Appearance');
     expect(compact?.textContent).toContain('Writing size');
     expect(compact?.textContent).toContain('Write');
-    expect(compact?.textContent).toContain('Save as…');
+    expect(compact?.textContent).not.toContain('Save as…');
+    expect(compact?.textContent).not.toContain('New document');
   });
   it('starts blank and editable and toggles without dirtying the document', () => {
     expect(document.querySelector('.tiptap')?.textContent).toBe('');
@@ -155,15 +152,28 @@ describe('two writing modes', () => {
   });
   it('creates a blank new document without welcome copy', async () => {
     document
-      .querySelector<HTMLButtonElement>('[aria-label="Document options"]')!
+      .querySelector<HTMLButtonElement>('[aria-label="New document"]')!
       .click();
-    flushSync();
-    button('New document ⌘ / Ctrl N').click();
     await new Promise((resolve) => setTimeout(resolve, 0));
     flushSync();
     expect(document.querySelector('.tiptap')?.textContent).toBe('');
     expect(document.querySelector('.eyebrow')).toBeNull();
     expect(document.querySelector('.welcome-actions')).toBeNull();
+  });
+  it('keeps New / Open / Save / Save as visible in the toolbar without opening a menu', () => {
+    for (const label of [
+      'New document',
+      'Open a document',
+      'Save',
+      'Save as a copy',
+    ]) {
+      const el = document.querySelector<HTMLButtonElement>(
+        `[aria-label="${label}"]`,
+      );
+      expect(el, label).not.toBeNull();
+      expect(el?.closest('[data-popover]')).toBeNull();
+    }
+    expect(document.querySelector('[aria-label="Document options"]')).toBeNull();
   });
 });
 

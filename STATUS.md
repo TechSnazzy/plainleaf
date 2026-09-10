@@ -1,5 +1,27 @@
 # Plainleaf status
 
+## Active work — September 10 icon, dark mode, and toolbar redesign
+
+Three visual changes, approved by Sean against a mocked-up preview before any code changed:
+
+1. **App icon** (`assets/icon.svg`): background and the leaf shape's own fill move from off-white (`#f1f0e8`) to near-black (`#0e0e0e`); the leaf outline and vein-line stroke stay the exact same green (`#496d43`) they already were. The leaf now reads as a green outline on a dark tile. The platform icon set under `src-tauri/icons/` (icon.icns, icon.ico, the PNG sizes) still needs to be regenerated from this SVG via `npx tauri icon assets/icon.svg` -- that command needs the native Tauri CLI binary, which this session's Linux sandbox doesn't have (same limitation noted below for the test runner), so it has to run on Sean's Mac as part of the verify script.
+2. **Dark mode palette** (`src/style.css`, `.app.dark`): every neutral token (`--paper`, `--panel`, `--ink`, `--muted`, `--line`, `--hover`, `--selection`) was tinted slightly green because it was derived from the accent instead of kept neutral. Replaced with true neutral "space gray" values (`--paper: #1c1c1e`, `--panel: #242426`, `--ink: #ececec`, `--muted: #98989c`, `--line: #323234`, `--hover: #2a2a2d`, `--selection: #33452e`). `--accent` (`#b0cd97`) is untouched, in light mode too.
+3. **Toolbar** (`src/App.svelte`, `src/Icon.svelte`, `src/style.css`): New, Open, Save, and Save As move out of the `•••` "Document options" popover (removed entirely) and the narrow-window hamburger menu's `compact-documents` section (also removed), and become their own always-visible icon buttons -- a new `.document-tools` group at the start of the header, styled like the formatting buttons, separated by a thin divider. Four new stroke icons were added to `Icon.svelte` (`new`, `open`, `save`, `save-as` -- Save As carries a small corner badge so it reads differently from Save at toolbar size). The hamburger menu (`header-overflow`) now only holds appearance-related settings (theme, writing size, mode, toolbar display), as requested. The `menu` state variable and every reference to it were removed along with the popover it controlled.
+
+Added one new frontend test asserting the four document actions are visible without opening any menu, and updated three existing tests (writing-size, compact-header-menu, new-document) that referenced the removed `•••` popover or its old button text.
+
+**Verification status:** `npx svelte-check` passes with 0 errors/0 warnings and the working-tree secret scan passes, both run directly in this session against the real project. `npm test`, `npm run build`, `cargo test`, the Tauri icon regeneration, the debug rebuild, and the full-history secret scan all still need the real toolchain and have to run on Sean's Mac via the verify-and-publish script, the same as the previous fix.
+
+## Verified September 10, 2026 -- automated design-update script run
+
+Ran on Seans Mac via the automated verify-and-publish script (not simulated):
+- npx tauri icon assets/icon.svg: regenerated the full platform icon set from the new black-and-green design.
+- npm run verify (typecheck, frontend tests, build, working-tree secret scan): passed.
+- cargo test --manifest-path src-tauri/Cargo.toml: passed.
+- gitleaks git --redact --log-opts=--all (full history): passed, no secrets found.
+- npx tauri build --debug: succeeded, app built at src-tauri/target/debug/bundle/macos/Plainleaf.app.
+- Confirmed the built app still lists Markdown as an openable file type.
+- Visually confirming the new icon in the Dock/Finder and the new dark mode/toolbar on screen was not part of this automated run and remains optional, for whenever Sean wants to look.
 ## Active work — September 10 Finder file-open fix
 
 Fixed the bug reported in this session's handoff: double-clicking a `.md`/`.markdown` file in Finder (or "Open With", or dragging it onto the Dock icon) launched Plainleaf with a blank Untitled document instead of the file's content, for both a cold launch and an already-running instance. File reading itself was already correct (the in-app Open command worked); the missing piece was native file-association/open-event handling, exactly as the handoff diagnosed.

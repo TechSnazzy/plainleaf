@@ -68,14 +68,14 @@ button:hover {
   flex-direction: column;
 }
 .app.dark {
-  --paper: #20241f;
-  --panel: #292e27;
-  --ink: #e3e6dd;
-  --muted: #a0aa99;
-  --line: #383f33;
+  --paper: #1c1c1e;
+  --panel: #242426;
+  --ink: #ececec;
+  --muted: #98989c;
+  --line: #323234;
   --accent: #b0cd97;
-  --hover: #343d2f;
-  --selection: #435b35;
+  --hover: #2a2a2d;
+  --selection: #33452e;
   color-scheme: dark;
 }
 .app-header {
@@ -93,6 +93,16 @@ button:hover {
   display: flex;
   align-items: center;
   gap: 3px;
+}
+.document-tools {
+  flex-wrap: wrap;
+}
+.tool-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 24px;
+  background: var(--line);
+  margin: 0 3px;
 }
 .format-tools {
   flex-wrap: wrap;
