@@ -3,6 +3,7 @@ import { mount, unmount, flushSync } from 'svelte';
 import App from './App.svelte';
 let component: ReturnType<typeof mount>;
 beforeEach(() => {
+  localStorage.clear();
   vi.stubGlobal('matchMedia', () => ({
     matches: false,
     addEventListener() {},
@@ -28,9 +29,7 @@ describe('two writing modes', () => {
     const app = document.querySelector<HTMLElement>('.app')!;
     expect(app.style.getPropertyValue('--reading-size')).toBe('26px');
     document
-      .querySelector<HTMLButtonElement>(
-        '[aria-label="Document and appearance options"]',
-      )!
+      .querySelector<HTMLButtonElement>('[aria-label="Document options"]')!
       .click();
     flushSync();
     const increase = document.querySelector<HTMLButtonElement>(
@@ -55,11 +54,31 @@ describe('two writing modes', () => {
       'Unsaved changes',
     );
   });
+  it('remembers toolbar display without modifying the document', async () => {
+    document
+      .querySelector<HTMLButtonElement>('[aria-label="Settings"]')!
+      .click();
+    flushSync();
+    const labels = document.querySelector<HTMLInputElement>(
+      'input[value="labels"]',
+    )!;
+    labels.checked = true;
+    labels.dispatchEvent(new Event('change', { bubbles: true }));
+    flushSync();
+    expect(localStorage.getItem('plainleaf.toolbarDisplay')).toBe('labels');
+    expect(document.querySelector('footer')?.textContent).not.toContain(
+      'Unsaved changes',
+    );
+    await unmount(component);
+    component = mount(App, { target: document.body });
+    flushSync();
+    expect(document.querySelector('header')?.getAttribute('data-display')).toBe(
+      'labels',
+    );
+  });
   it('starts blank and editable and toggles without dirtying the document', () => {
     expect(document.querySelector('.tiptap')?.textContent).toBe('');
-    expect(document.querySelector('.document-title')?.textContent).toBe(
-      'Untitled',
-    );
+    expect(document.querySelector('.document-title')).toBeNull();
     expect(document.body.textContent).not.toContain(
       'A little room for your words',
     );
@@ -97,9 +116,7 @@ describe('two writing modes', () => {
   });
   it('creates a blank new document without welcome copy', async () => {
     document
-      .querySelector<HTMLButtonElement>(
-        '[aria-label="Document and appearance options"]',
-      )!
+      .querySelector<HTMLButtonElement>('[aria-label="Document options"]')!
       .click();
     flushSync();
     button('New document ⌘ / Ctrl N').click();

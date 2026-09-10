@@ -62,7 +62,7 @@
               overflow: 'auto',
             },
             '.cm-content': {
-              padding: '52px max(28px, calc((100% - 690px) / 2)) 100px',
+              padding: '40px var(--page-gutter) 100px',
               caretColor: 'var(--accent)',
             },
             '.cm-focused': { outline: 'none' },

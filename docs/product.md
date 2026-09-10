@@ -4,6 +4,8 @@ Product contract · Updated September 9, 2026
 
 ## Latest direction — supersedes the original Read/Edit scope
 
+September 10 design refinement: use wider shared page margins (8% per side, bounded for small/large windows), no header/footer divider rules, no in-app logo or duplicate filename. The native window title retains the filename. Formatting, appearance and size controls are directly visible; the document overflow menu contains only file operations. Separate Settings offers persisted icons-only (default), icons with labels, and labels-only toolbar display. Controls wrap to remain available in smaller windows; icon buttons have accessible labels and tooltips.
+
 The user requested editable text in both views and modern, non-serif typography. The modes are **Write** (formatted, editable Markdown) and **Source** (raw, editable Markdown). New and opened documents start in Write. System sans-serif fonts cover body text, headings, and dialogs; source and code use monospace. No remote fonts are loaded.
 
 Basic formatting is available in both views. Opening or switching views must never rewrite source. Actual formatted edits may normalize equivalent Markdown syntax; this behavior must be documented. Unsupported syntax must not be silently discarded: the prototype protects such documents with a sanitized preview and Source editing. Expand safe formatted support incrementally.

@@ -58,6 +58,7 @@ button:hover {
   --accent: #496d43;
   --hover: #e9ece3;
   --selection: #ccd9bd;
+  --page-gutter: clamp(24px, 8vw, 160px);
   --mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
   background: var(--paper);
   color: var(--ink);
@@ -77,58 +78,82 @@ button:hover {
   --selection: #435b35;
   color-scheme: dark;
 }
-header {
-  height: 76px;
+.app-header {
+  position: relative;
+  min-height: 64px;
   flex-shrink: 0;
-  padding: 0 30px;
+  padding: 14px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+.tool-group,
+.header-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
-  border-bottom: 1px solid var(--line);
+  gap: 3px;
 }
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 20px;
-  font-weight: 580;
-  letter-spacing: -0.7px;
-  min-width: 150px;
-}
-.brand svg {
-  width: 27px;
-  height: 30px;
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.55;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.document-title {
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.format-tools {
+  flex-wrap: wrap;
+  margin-right: auto;
 }
 .header-actions {
-  min-width: 150px;
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 14px;
+  margin-left: auto;
+}
+.tool-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 30px;
+  min-height: 32px;
+  padding: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.tool-icon {
+  flex-shrink: 0;
+}
+.tool-button:hover,
+.tool-button.selected {
+  color: var(--ink);
+  background: var(--panel);
+}
+.tool-button.selected {
+  color: var(--accent);
+}
+.tool-label {
+  text-transform: capitalize;
+}
+[data-display='icons'] .tool-label {
+  display: none;
+}
+[data-display='labels'] .tool-icon {
+  display: none;
+}
+.text-size {
+  gap: 1px;
+}
+.text-size output {
+  min-width: 27px;
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 .mode-switch {
   display: flex;
   background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 7px;
   padding: 3px;
 }
 .mode-switch button {
   font-size: 12px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   color: var(--muted);
 }
 .mode-switch button.active {
@@ -136,9 +161,8 @@ header {
   color: var(--ink);
   box-shadow: 0 1px 3px #0000000d;
 }
-.more-button {
-  letter-spacing: 2px;
-  padding: 8px;
+.popover-anchor {
+  position: relative;
 }
 main {
   position: relative;
@@ -148,7 +172,7 @@ main {
 .read-surface {
   height: 100%;
   overflow: auto;
-  padding: 62px max(30px, calc((100% - 650px) / 2)) 75px;
+  padding: 40px var(--page-gutter) 75px;
 }
 .eyebrow {
   font-size: 10px;
@@ -275,7 +299,6 @@ article input {
 }
 footer {
   height: 40px;
-  border-top: 1px solid var(--line);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -304,8 +327,8 @@ footer {
 }
 .popover {
   position: absolute;
-  right: 24px;
-  top: 66px;
+  right: 0;
+  top: calc(100% + 8px);
   width: 285px;
   padding: 14px;
   background: var(--paper);
@@ -333,38 +356,38 @@ footer {
   color: var(--muted);
   font-family: inherit;
 }
-.format-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.settings-popover {
+  width: 240px;
 }
-.format-grid button {
-  text-align: left;
-  font-size: 12px;
+.settings-popover fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
 }
-.appearance {
+.settings-popover legend {
+  font-weight: 600;
+  padding: 6px 8px 12px;
+}
+.display-choice {
   display: flex;
-  background: var(--panel);
-  border-radius: 7px;
-  padding: 3px;
-}
-.appearance button {
-  flex: 1;
-  text-transform: capitalize;
-  font-size: 12px;
-}
-.appearance .selected {
-  background: var(--paper);
-  box-shadow: 0 1px 3px #0001;
-}
-.text-size {
-  display: flex;
+  gap: 10px;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  padding-top: 10px;
+  padding: 10px 8px;
+  border-radius: 6px;
+  cursor: pointer;
 }
-.text-size > span:first-child {
-  flex: 1;
+.display-choice:hover {
+  background: var(--panel);
+}
+.display-choice input {
+  accent-color: var(--accent);
+  margin: 0;
+}
+.settings-popover p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 14px 8px;
 }
 .error {
   display: flex;
@@ -468,24 +491,15 @@ dialog::backdrop {
   font-style: italic;
 }
 @media (max-width: 650px) {
-  header {
-    padding: 0 18px;
+  .app-header {
+    padding: 10px 16px;
     gap: 8px;
   }
-  .brand {
-    min-width: 0;
-  }
-  .brand span {
-    display: none;
-  }
-  .document-title {
-    text-align: left;
-  }
   .header-actions {
-    min-width: 0;
+    gap: 8px;
   }
   .read-surface {
-    padding-top: 36px;
+    padding-top: 28px;
   }
   article h1 {
     font-size: 2.1em;

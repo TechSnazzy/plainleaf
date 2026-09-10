@@ -7,6 +7,7 @@
   import type { EditorView } from '@codemirror/view';
   import { openSearchPanel } from '@codemirror/search';
   import Editor from './Editor.svelte';
+  import Icon from './Icon.svelte';
   import RichEditor, { type RichHandle } from './RichEditor.svelte';
   import {
     isDirty,
@@ -31,6 +32,32 @@
     zoom = $state(26),
     query = $state(''),
     showFind = $state(false);
+  type ToolbarDisplay = 'icons' | 'both' | 'labels';
+  let toolbarDisplay = $state<ToolbarDisplay>('icons');
+  let settings = $state(false);
+  const formats = [
+    ['bold', 'Bold'],
+    ['italic', 'Italic'],
+    ['heading', 'Heading'],
+    ['link', 'Link'],
+    ['bullet', 'Bullet list'],
+    ['ordered', 'Numbered list'],
+    ['task', 'Task list'],
+    ['quote', 'Quote'],
+    ['code', 'Inline code'],
+    ['fence', 'Code block'],
+  ];
+  function setToolbarDisplay(value: ToolbarDisplay) {
+    toolbarDisplay = value;
+    try {
+      localStorage.setItem('plainleaf.toolbarDisplay', value);
+    } catch {}
+  }
+  function dismissPopovers(e: PointerEvent) {
+    if (!(e.target instanceof Element) || e.target.closest('[data-popover]'))
+      return;
+    menu = settings = false;
+  }
   let editor: EditorView | undefined;
   let rich: RichHandle | undefined;
   let syncingSource = false;
@@ -218,6 +245,7 @@
     if (e.key === 'Escape') {
       menu = false;
       showFind = false;
+      settings = false;
     }
     if (!(e.metaKey || e.ctrlKey) || prompt || busy) return;
     switch (e.key.toLowerCase()) {
@@ -289,6 +317,9 @@
   onMount(() => {
     try {
       theme = validTheme(localStorage.getItem('plainleaf.theme'));
+      const display = localStorage.getItem('plainleaf.toolbarDisplay');
+      if (display === 'icons' || display === 'both' || display === 'labels')
+        toolbarDisplay = display;
     } catch {}
     const media = matchMedia('(prefers-color-scheme: dark)');
     systemDark = media.matches;
@@ -329,18 +360,67 @@
   });
 </script>
 
-<svelte:window onkeydown={keyboard} />
+<svelte:window onkeydown={keyboard} onpointerdown={dismissPopovers} />
 <div class:dark class="app" style:--reading-size={`${zoom}px`}>
-  <header>
-    <div class="brand" aria-label="Plainleaf">
-      <svg viewBox="0 0 32 32" aria-hidden="true"
-        ><path d="M25 6C12 4 5 10 7 20c2 9 17 9 18-14Z" /><path
-          d="M7 27 21 12M12 21l-1-8m5 4 7-1"
-        /></svg
-      ><span>plainleaf</span>
+  <header class="app-header" data-display={toolbarDisplay}>
+    <div class="format-tools tool-group" role="group" aria-label="Formatting">
+      {#each formats as [kind, label]}
+        <button
+          class="tool-button"
+          aria-label={label}
+          title={label}
+          disabled={busy}
+          onmousedown={(e) => e.preventDefault()}
+          onclick={() => format(kind)}
+        >
+          <Icon name={kind} /><span class="tool-label">{label}</span>
+        </button>
+      {/each}
     </div>
-    <div class="document-title" title={name}>{dirty ? '• ' : ''}{name}</div>
     <div class="header-actions">
+      <div class="tool-group" role="group" aria-label="Appearance">
+        {#each ['light', 'dark', 'system'] as t}
+          <button
+            class="tool-button"
+            class:selected={theme === t}
+            aria-label={t === 'system'
+              ? 'System appearance'
+              : t === 'light'
+                ? 'Light appearance'
+                : 'Dark appearance'}
+            title={t === 'system'
+              ? 'Follow system appearance'
+              : t === 'light'
+                ? 'Light appearance'
+                : 'Dark appearance'}
+            aria-pressed={theme === t}
+            onclick={() => setTheme(t as Theme)}
+          >
+            <Icon name={t} /><span class="tool-label">{t}</span>
+          </button>
+        {/each}
+      </div>
+      <div class="tool-group text-size" role="group" aria-label="Writing size">
+        <button
+          class="tool-button"
+          aria-label="Decrease text size"
+          title="Smaller text (⌘ / Ctrl −)"
+          disabled={zoom <= 14}
+          onclick={() => (zoom = Math.max(14, zoom - 1))}
+          ><Icon name="decrease" /><span class="tool-label">Smaller</span
+          ></button
+        >
+        <output aria-label="Writing size">{zoom}</output>
+        <button
+          class="tool-button"
+          aria-label="Increase text size"
+          title="Larger text (⌘ / Ctrl +)"
+          disabled={zoom >= 64}
+          onclick={() => (zoom = Math.min(64, zoom + 1))}
+          ><Icon name="increase" /><span class="tool-label">Larger</span
+          ></button
+        >
+      </div>
       <div class="mode-switch" aria-label="Document mode">
         <button
           class:active={mode === 'read'}
@@ -349,7 +429,8 @@
           onclick={() => {
             if (mode !== 'read') toggle();
           }}>Write</button
-        ><button
+        >
+        <button
           class:active={mode === 'edit'}
           aria-pressed={mode === 'edit'}
           disabled={busy}
@@ -358,59 +439,79 @@
           }}>Source</button
         >
       </div>
-      <button
-        class="more-button"
-        aria-label="Document and appearance options"
-        aria-expanded={menu}
-        onclick={() => (menu = !menu)}>•••</button
-      >
+      <div class="popover-anchor" data-popover>
+        <button
+          class="tool-button"
+          aria-label="Settings"
+          title="Settings"
+          aria-expanded={settings}
+          onclick={() => {
+            settings = !settings;
+            menu = false;
+          }}
+          ><Icon name="settings" /><span class="tool-label">Settings</span
+          ></button
+        >
+        {#if settings}
+          <aside class="popover settings-popover" aria-label="Settings">
+            <fieldset>
+              <legend>Toolbar display</legend>
+              {#each [['icons', 'Icons only'], ['both', 'Icons + labels'], ['labels', 'Labels only']] as [value, label]}
+                <label class="display-choice"
+                  ><input
+                    type="radio"
+                    name="toolbar-display"
+                    {value}
+                    checked={toolbarDisplay === value}
+                    onchange={() => setToolbarDisplay(value as ToolbarDisplay)}
+                  />{label}</label
+                >
+              {/each}
+            </fieldset>
+            <p>Hover over an icon to see its name.</p>
+            <button onclick={() => (settings = false)}>Done</button>
+          </aside>
+        {/if}
+      </div>
+      <div class="popover-anchor" data-popover>
+        <button
+          class="tool-button"
+          aria-label="Document options"
+          title="Document options"
+          aria-expanded={menu}
+          onclick={() => {
+            menu = !menu;
+            settings = false;
+          }}
+          ><Icon name="more" /><span class="tool-label">Document</span></button
+        >
+        {#if menu}
+          <aside class="popover" aria-label="Document options">
+            <button onclick={newDocument} disabled={busy}
+              >New document <kbd>⌘ / Ctrl N</kbd></button
+            >
+            <button onclick={openDocument} disabled={busy}
+              >Open… <kbd>⌘ / Ctrl O</kbd></button
+            >
+            <button
+              onclick={() =>
+                action(async () => {
+                  await save();
+                })}
+              disabled={busy}>Save <kbd>⌘ / Ctrl S</kbd></button
+            >
+            <button
+              onclick={() =>
+                action(async () => {
+                  await save(true);
+                })}
+              disabled={busy}>Save as…</button
+            >
+          </aside>
+        {/if}
+      </div>
     </div>
   </header>
-  {#if menu}
-    <aside class="popover" aria-label="Document options">
-      <div class="menu-label">DOCUMENT</div>
-      <button onclick={newDocument} disabled={busy}
-        >New document <kbd>⌘ / Ctrl N</kbd></button
-      ><button onclick={openDocument} disabled={busy}
-        >Open… <kbd>⌘ / Ctrl O</kbd></button
-      ><button
-        onclick={() =>
-          action(async () => {
-            await save();
-          })}
-        disabled={busy}>Save <kbd>⌘ / Ctrl S</kbd></button
-      ><button
-        onclick={() =>
-          action(async () => {
-            await save(true);
-          })}
-        disabled={busy}>Save as…</button
-      >
-      <div class="menu-label">FORMAT</div>
-      <div class="format-grid">
-        {#each [['bold', 'Bold'], ['italic', 'Italic'], ['heading', 'Heading'], ['link', 'Link'], ['bullet', 'Bullet list'], ['ordered', 'Numbered list'], ['task', 'Task list'], ['quote', 'Quote'], ['code', 'Inline code'], ['fence', 'Code block']] as [kind, label]}<button
-            onclick={() => format(kind)}>{label}</button
-          >{/each}
-      </div>
-      <div class="menu-label">APPEARANCE</div>
-      <div class="appearance">
-        {#each ['light', 'dark', 'system'] as t}<button
-            class:selected={theme === t}
-            aria-pressed={theme === t}
-            onclick={() => setTheme(t as Theme)}>{t}</button
-          >{/each}
-      </div>
-      <div class="text-size">
-        <span>Writing size</span><button
-          aria-label="Decrease text size"
-          onclick={() => (zoom = Math.max(14, zoom - 1))}>−</button
-        ><span>{zoom}</span><button
-          aria-label="Increase text size"
-          onclick={() => (zoom = Math.min(64, zoom + 1))}>+</button
-        >
-      </div>
-    </aside>
-  {/if}
   {#if error}<div class="error" role="alert">
       <span>{error}</span><button
         aria-label="Dismiss error"
