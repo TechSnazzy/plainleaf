@@ -17,6 +17,7 @@
     type Theme,
   } from './lib/document';
   type Loaded = { text: string; name: string };
+  type PendingInfo = { id: number; name: string };
   let text = $state(''),
     saved = $state(''),
     name = $state('Untitled');
@@ -174,6 +175,31 @@
     }
     reset({ text: await file.text(), name: file.name });
     fileInput.value = '';
+  }
+  let handlingExternalOpen = false;
+  async function handleExternalOpen(info: PendingInfo) {
+    await action(async () => {
+      if (!(await permit())) {
+        try {
+          await invoke('reject_pending_open', { id: info.id });
+        } catch {}
+        return;
+      }
+      const doc = await invoke<Loaded>('accept_pending_open', { id: info.id });
+      reset(doc);
+    });
+  }
+  async function checkPendingOpen() {
+    if (handlingExternalOpen) return;
+    handlingExternalOpen = true;
+    try {
+      const info = await invoke<PendingInfo | null>('take_pending_open');
+      if (info) await handleExternalOpen(info);
+    } catch (e) {
+      error = String(e);
+    } finally {
+      handlingExternalOpen = false;
+    }
   }
   function toggle() {
     mode = mode === 'read' ? 'edit' : 'read';
@@ -344,6 +370,8 @@
     window.addEventListener('beforeunload', unload);
     let unlisten: (() => void) | undefined;
     let unlistenQuit: (() => void) | undefined;
+    let unlistenOpen: (() => void) | undefined;
+    let unlistenOpenFailed: (() => void) | undefined;
     if (native)
       void listen('request-quit', () =>
         action(async () => {
@@ -359,6 +387,19 @@
           });
         })
         .then((fn) => (unlisten = fn));
+    if (native) {
+      // Register the listener before asking for any pending candidate, so a
+      // file the OS handed us before this listener existed (a cold-launch
+      // race) is still picked up by the immediate checkPendingOpen() call
+      // below rather than lost.
+      void listen('open-requested', () => {
+        void checkPendingOpen();
+      }).then((fn) => (unlistenOpen = fn));
+      void listen<string>('open-request-failed', (e) => {
+        error = e.payload;
+      }).then((fn) => (unlistenOpenFailed = fn));
+      void checkPendingOpen();
+    }
     return () => {
       editor = undefined;
       rich = undefined;
@@ -366,6 +407,8 @@
       window.removeEventListener('beforeunload', unload);
       unlisten?.();
       unlistenQuit?.();
+      unlistenOpen?.();
+      unlistenOpenFailed?.();
     };
   });
 </script>

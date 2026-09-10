@@ -20,3 +20,4 @@ test-results/
 playwright-report/
 .cache/
 src-tauri/gen/
+run-verification-and-publish.command

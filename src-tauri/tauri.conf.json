@@ -35,6 +35,14 @@
       "icons/icon.ico"
     ],
     "shortDescription": "A quiet Markdown reader and editor",
-    "category": "Productivity"
+    "category": "Productivity",
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown"],
+        "name": "Markdown Document",
+        "mimeType": "text/markdown",
+        "role": "Editor"
+      }
+    ]
   }
 }

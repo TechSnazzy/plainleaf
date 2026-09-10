@@ -1,6 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
+import { invoke, isTauri } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import App from './App.svelte';
+vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tauri-apps/api/core')>()),
+  isTauri: vi.fn(() => false),
+  invoke: vi.fn(async () => undefined),
+}));
+vi.mock('@tauri-apps/api/event', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tauri-apps/api/event')>()),
+  listen: vi.fn(async () => () => {}),
+}));
+vi.mock('@tauri-apps/api/window', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tauri-apps/api/window')>()),
+  getCurrentWindow: vi.fn(() => ({
+    setTitle: vi.fn(async () => {}),
+    onCloseRequested: vi.fn(async () => () => {}),
+  })),
+}));
 let component: ReturnType<typeof mount>;
 beforeEach(() => {
   localStorage.clear();
@@ -11,6 +29,14 @@ beforeEach(() => {
   }));
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
   Range.prototype.getBoundingClientRect = () => new DOMRect();
+  // jsdom doesn't implement <dialog> behavior -- stub it so the existing
+  // unsaved-changes modal (a native <dialog>) can mount in tests.
+  HTMLDialogElement.prototype.showModal = function () {
+    this.open = true;
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.open = false;
+  };
   component = mount(App, { target: document.body });
   flushSync();
 });
@@ -138,5 +164,131 @@ describe('two writing modes', () => {
     expect(document.querySelector('.tiptap')?.textContent).toBe('');
     expect(document.querySelector('.eyebrow')).toBeNull();
     expect(document.querySelector('.welcome-actions')).toBeNull();
+  });
+});
+
+describe('native external file open', () => {
+  type Handler = (event: { event: string; id: number; payload: unknown }) => void;
+  const invokeMock = vi.mocked(invoke);
+  const listenMock = vi.mocked(listen);
+  let listeners: Record<string, Handler>;
+  beforeEach(async () => {
+    await unmount(component);
+    document.body.innerHTML = '';
+    listeners = {};
+    listenMock.mockReset();
+    listenMock.mockImplementation(async (event: string, handler: Handler) => {
+      listeners[event] = handler;
+      return () => {
+        delete listeners[event];
+      };
+    });
+    invokeMock.mockReset();
+    invokeMock.mockImplementation(async (cmd: string) => {
+      if (cmd === 'take_pending_open') return null;
+      return undefined;
+    });
+    vi.mocked(isTauri).mockReturnValue(true);
+    component = mount(App, { target: document.body });
+    flushSync();
+    await Promise.resolve();
+    await Promise.resolve();
+    flushSync();
+  });
+  afterEach(() => {
+    vi.mocked(isTauri).mockReturnValue(false);
+  });
+  async function settle() {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    flushSync();
+  }
+  it('asks to save unsaved work before loading a file opened from outside, and Cancel preserves the draft', async () => {
+    document.querySelector('.tiptap p')!.textContent = 'My unsaved draft';
+    await settle();
+    expect(document.querySelector('footer')?.textContent).toContain(
+      'Unsaved changes',
+    );
+    invokeMock.mockImplementation(async (cmd: string) => {
+      if (cmd === 'take_pending_open') return { id: 1, name: 'AGENTS.md' };
+      return undefined;
+    });
+    listeners['open-requested']({
+      event: 'open-requested',
+      id: 1,
+      payload: undefined,
+    });
+    await settle();
+    expect(document.querySelector('dialog')).not.toBeNull();
+    button('Cancel').click();
+    await settle();
+    expect(document.querySelector('dialog')).toBeNull();
+    expect(document.querySelector('.tiptap p')?.textContent).toBe(
+      'My unsaved draft',
+    );
+    expect(invokeMock).toHaveBeenCalledWith('reject_pending_open', { id: 1 });
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      'accept_pending_open',
+      expect.anything(),
+    );
+  });
+  it('loads the file opened from outside once Discard is chosen', async () => {
+    document.querySelector('.tiptap p')!.textContent = 'My unsaved draft';
+    await settle();
+    invokeMock.mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'take_pending_open') return { id: 7, name: 'AGENTS.md' };
+      if (cmd === 'accept_pending_open') {
+        expect(args).toEqual({ id: 7 });
+        return { name: 'AGENTS.md', text: 'Loaded from outside' };
+      }
+      return undefined;
+    });
+    listeners['open-requested']({
+      event: 'open-requested',
+      id: 1,
+      payload: undefined,
+    });
+    await settle();
+    expect(document.querySelector('dialog')).not.toBeNull();
+    button('Discard').click();
+    await settle();
+    expect(document.querySelector('dialog')).toBeNull();
+    expect(document.querySelector('.tiptap')?.textContent).toBe(
+      'Loaded from outside',
+    );
+    expect(document.querySelector('footer')?.textContent).not.toContain(
+      'Unsaved changes',
+    );
+  });
+  it('picks up a file that arrived before the listener existed, once the document is clean', async () => {
+    invokeMock.mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'take_pending_open') return { id: 3, name: 'notes.md' };
+      if (cmd === 'accept_pending_open') {
+        expect(args).toEqual({ id: 3 });
+        return { name: 'notes.md', text: 'Cold launch content' };
+      }
+      return undefined;
+    });
+    await unmount(component);
+    document.body.innerHTML = '';
+    component = mount(App, { target: document.body });
+    flushSync();
+    await settle();
+    expect(document.querySelector('dialog')).toBeNull();
+    expect(document.querySelector('.tiptap')?.textContent).toBe(
+      'Cold launch content',
+    );
+  });
+  it('reports a rejected external file without changing the current document', async () => {
+    invokeMock.mockImplementation(async () => undefined);
+    listeners['open-request-failed']({
+      event: 'open-request-failed',
+      id: 1,
+      payload: 'Please open a .md or .markdown file.',
+    });
+    await settle();
+    expect(document.querySelector('.error')?.textContent).toContain(
+      'Please open a .md or .markdown file.',
+    );
+    expect(document.querySelector('.tiptap')?.textContent).toBe('');
   });
 });
