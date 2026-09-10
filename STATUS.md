@@ -2,6 +2,8 @@
 
 Published September 9, 2026: the scanned `main` branch is public at `https://github.com/TechSnazzy/plainleaf`. GitHub Actions and Dependabot started after the initial push. No binary release, signing, notarization, or production-readiness claim has been made.
 
+September 9, 2026 follow-up: verified local `main` == `origin/main` (`ba2261c`); the push completed despite an assistant usage-limit interruption. Gitleaks 8.30.1 installed and the required full-history scan (`gitleaks git --redact --log-opts=--all`, 8 commits) ran clean — no leaks. Working-tree `npm run scan:secrets` also passed.
+
 Latest minimal-UI update: launch and New start with a blank Untitled document (no welcome heading or sample text). Scrollbars are visually hidden across Write/Source while native overflow scrolling stays enabled. Browser long-document check confirmed scroll movement with scrollbar-width none. `npm run verify` passes with 17 frontend tests; Mac debug bundle rebuilt. Save any draft before restarting the running app.
 
 Latest update: Write defaults to 26px and can increase to 64px through the menu or Cmd/Ctrl + plus. Source/code sizing is unchanged. `npm run verify` passes with 16 frontend tests, including the new default/maximum-size regression test. The Mac debug bundle has been rebuilt; restart after saving any open draft to use it.
