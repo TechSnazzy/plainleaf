@@ -55,4 +55,13 @@ describe('formatted view integration', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(view.changes.at(-1)?.trimEnd()).toBe('# A new draft');
   });
+  it('offers three distinct heading levels', () => {
+    const view = setup('Heading');
+    view.handle.format('heading1');
+    expect(document.querySelector('h1')?.textContent).toBe('Heading');
+    view.handle.format('heading2');
+    expect(document.querySelector('h2')?.textContent).toBe('Heading');
+    view.handle.format('heading3');
+    expect(document.querySelector('h3')?.textContent).toBe('Heading');
+  });
 });

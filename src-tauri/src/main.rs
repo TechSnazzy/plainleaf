@@ -74,6 +74,19 @@ fn atomic_write(path: &Path, text: &str) -> Result<(), String> {
         .map_err(|_| "Could not replace the file. Your edits remain in Plainleaf; try Save As.")?;
     Ok(())
 }
+fn ensure_original_unchanged(path: &Path, expected: Option<&str>) -> Result<(), String> {
+    if path.is_symlink() {
+        return Err(
+            "The file changed into a symbolic link. Use Save As to preserve your edits.".into(),
+        );
+    }
+    let current = read_document(path)
+        .map_err(|_| "The original file is unavailable. Use Save As to preserve your edits.")?;
+    if Some(current.as_str()) != expected {
+        return Err("This file changed outside Plainleaf. Use Save As to keep your edits in a separate file, or reopen it to load the external changes.".into());
+    }
+    Ok(())
+}
 #[tauri::command]
 fn new_document(state: tauri::State<Mutex<Document>>) -> Result<(), String> {
     *state.lock().map_err(|_| "Document is busy.")? = Document::default();
@@ -144,16 +157,7 @@ async fn save_document(
         old_path.clone().unwrap()
     };
     if old_path.as_ref() == Some(&path) {
-        if path.is_symlink() {
-            return Err(
-                "The file changed into a symbolic link. Use Save As to preserve your edits.".into(),
-            );
-        }
-        let current = read_document(&path)
-            .map_err(|_| "The original file is unavailable. Use Save As to preserve your edits.")?;
-        if Some(&current) != old_text.as_ref() {
-            return Err("This file changed outside Plainleaf. Use Save As to keep your edits in a separate file, or reopen it to load the external changes.".into());
-        }
+        ensure_original_unchanged(&path, old_text.as_deref())?;
     }
     atomic_write(&path, &text)?;
     let name = filename(&path);
@@ -219,5 +223,30 @@ mod tests {
         fs::write(&path, "original").unwrap();
         assert!(atomic_write(&dir.path().join("absent/file.md"), "changed").is_err());
         assert_eq!(read_document(&path).unwrap(), "original");
+    }
+    #[test]
+    fn unchanged_original_can_be_saved() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("draft.md");
+        fs::write(&path, "original").unwrap();
+        assert!(ensure_original_unchanged(&path, Some("original")).is_ok());
+    }
+    #[test]
+    fn external_change_is_rejected_without_overwriting() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("draft.md");
+        fs::write(&path, "external version").unwrap();
+        let error = ensure_original_unchanged(&path, Some("version Plainleaf opened"))
+            .expect_err("external change should be rejected");
+        assert!(error.contains("changed outside Plainleaf"));
+        assert_eq!(read_document(&path).unwrap(), "external version");
+    }
+    #[test]
+    fn missing_original_requires_save_as() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("missing.md");
+        let error = ensure_original_unchanged(&path, Some("old"))
+            .expect_err("missing original should be rejected");
+        assert!(error.contains("original file is unavailable"));
     }
 }

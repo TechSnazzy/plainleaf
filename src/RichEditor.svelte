@@ -114,8 +114,14 @@
           case 'code':
             chain.toggleCode().run();
             break;
-          case 'heading':
+          case 'heading1':
+            chain.toggleHeading({ level: 1 }).run();
+            break;
+          case 'heading2':
             chain.toggleHeading({ level: 2 }).run();
+            break;
+          case 'heading3':
+            chain.toggleHeading({ level: 3 }).run();
             break;
           case 'bullet':
             chain.toggleBulletList().run();

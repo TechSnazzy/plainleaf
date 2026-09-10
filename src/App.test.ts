@@ -25,9 +25,9 @@ function button(label: string) {
   )!;
 }
 describe('two writing modes', () => {
-  it('defaults to 26px and supports writing sizes up to 64px without changing text', () => {
+  it('defaults to 18px and supports writing sizes up to 64px without changing text', () => {
     const app = document.querySelector<HTMLElement>('.app')!;
-    expect(app.style.getPropertyValue('--reading-size')).toBe('26px');
+    expect(app.style.getPropertyValue('--reading-size')).toBe('18px');
     document
       .querySelector<HTMLButtonElement>('[aria-label="Document options"]')!
       .click();

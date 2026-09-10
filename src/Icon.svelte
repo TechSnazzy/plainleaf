@@ -3,7 +3,6 @@
   const paths: Record<string, string> = {
     bold: 'M7 4h6a4 4 0 0 1 0 8H7zm0 8h7a4 4 0 0 1 0 8H7z',
     italic: 'M10 4h9M5 20h9M15 4 9 20',
-    heading: 'M5 5v14M15 5v14M5 12h10M19 15v5m-1-4 1-1',
     link: 'M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2',
     bullet: 'M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01',
     ordered:
@@ -34,5 +33,19 @@
   stroke-linecap="round"
   stroke-linejoin="round"
   aria-hidden="true"
-  focusable="false"><path d={paths[name] || paths.settings} /></svg
+  focusable="false"
 >
+  {#if name.startsWith('heading')}
+    <text
+      x="2"
+      y="17"
+      fill="currentColor"
+      stroke="none"
+      font-family="sans-serif"
+      font-size="14"
+      font-weight="650">H{name.slice(-1)}</text
+    >
+  {:else}
+    <path d={paths[name] || paths.settings} />
+  {/if}
+</svg>

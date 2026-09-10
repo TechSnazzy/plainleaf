@@ -1,12 +1,18 @@
 # Plainleaf status
 
+## Active work — September 10 native file-safety pass
+
+The user closed the unsaved draft, so disposable manual native testing may resume after rebuilding. External-change comparison now has direct coverage for unchanged, externally changed, and missing original files; rejected saves are proven not to overwrite disk content. Rust tests pass (7), and frontend verification passes (19 tests, zero diagnostics, build and working-tree secret scan). Manual Save As/reopen/cancel/close/quit and external-change UI checks remain. Use only disposable fixtures and stop if an unexpected user draft appears. Sol low is appropriate; recommend Sol medium only if tests expose a nontrivial cross-platform bug.
+
+September 10 heading follow-up: the former single Heading command is now three explicit H1, H2, and H3 controls in Write and Source. In Source, changing a selected heading replaces an existing Markdown heading prefix instead of stacking another prefix. Keep this narrow behavior and the approved toolbar design intact.
+
 ## Approved — September 10 design pass
 
 Sean approved the redesigned interface. This pass is complete and ready for its Git checkpoint. Next functional milestone: verify native Save/Save As/reopen, cancellation, unsaved close/quit, and refusal to overwrite externally modified files using disposable fixtures. Then address cross-mode undo/selection, followed by release packaging. Keep the approved visual design as the baseline.
 
 User authorized this UI redesign. Resume here if interrupted; inspect git diff before changing anything. Do not repeat completed work or replace user changes.
 
-Scope: widen both writing columns (narrower side margins); remove header/footer divider lines; remove in-app logo and duplicate centered filename while retaining the native window title; keep Write/Source; restrict the three-dot menu to New/Open/Save/Save As; expose formatting, Light/Dark/System, and writing-size controls directly in the header. Add a separate Settings control with persisted toolbar display choices: icons only (default), icons + labels, labels only. Use local SVG icons, accessible names and tooltips. Preserve blank startup, hidden scrollbars, 26px default and 14–64px size range, source preservation, keyboard shortcuts and file safety.
+Scope: widen both writing columns (narrower side margins); remove header/footer divider lines; remove in-app logo and duplicate centered filename while retaining the native window title; keep Write/Source; restrict the three-dot menu to New/Open/Save/Save As; expose formatting, Light/Dark/System, and writing-size controls directly in the header. Add a separate Settings control with persisted toolbar display choices: icons only (default), icons + labels, labels only. Use local SVG icons, accessible names and tooltips. Preserve blank startup, hidden scrollbars, 18px default and 14–64px size range, source preservation, keyboard shortcuts and file safety.
 
 Plan: (1) record handoff — done; (2) inspect current UI and implement toolbar + shared wider page padding; (3) verify formatting selection, themes, persisted display settings, document-only menu and narrow-window wrapping; (4) run npm run verify and required Rust tests; (5) rebuild the Mac prototype, record results and provide a review artifact. Do not terminate a running app that may hold a draft. No release workflow or unrelated editor/storage changes in this pass.
 
@@ -24,7 +30,7 @@ September 9, 2026 follow-up: verified local `main` == `origin/main` (`ba2261c`);
 
 Latest minimal-UI update: launch and New start with a blank Untitled document (no welcome heading or sample text). Scrollbars are visually hidden across Write/Source while native overflow scrolling stays enabled. Browser long-document check confirmed scroll movement with scrollbar-width none. `npm run verify` passes with 17 frontend tests; Mac debug bundle rebuilt. Save any draft before restarting the running app.
 
-Latest update: Write defaults to 26px and can increase to 64px through the menu or Cmd/Ctrl + plus. Source/code sizing is unchanged. `npm run verify` passes with 16 frontend tests, including the new default/maximum-size regression test. The Mac debug bundle has been rebuilt; restart after saving any open draft to use it.
+Latest update: Write originally defaulted to 26px and can increase to 64px through the controls or Cmd/Ctrl + plus. On September 10, the requested fresh-install default changed to 18px. Source/code sizing is unchanged. The default/maximum-size regression test covers this behavior.
 
 Current milestone: reviewable local Mac prototype with editable Write/Source modes and sans-serif typography. Updated September 9, 2026.
 

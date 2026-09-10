@@ -1,6 +1,6 @@
 # Prototype QA
 
-Automated: 15 frontend tests for dirty state, Markdown safety, formatted edits, safe synchronization, unsupported-content fallback and Write/Source integration; 4 native tests for UTF-8, extensions, atomic writes and failed saves. Run npm run verify and cargo test --locked --manifest-path src-tauri/Cargo.toml.
+Automated: 19 frontend tests for dirty state, Markdown safety, formatted edits, safe synchronization, unsupported-content fallback, Write/Source integration, heading levels and toolbar preferences; 7 native tests cover UTF-8, extensions, atomic writes, failed saves, unchanged originals, external changes and missing originals. Run npm run verify and cargo test --locked --manifest-path src-tauri/Cargo.toml.
 
 Manual checklist (record only observed outcomes):
 

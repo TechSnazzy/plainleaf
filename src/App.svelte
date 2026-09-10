@@ -29,7 +29,7 @@
     busy = $state(false);
   let error = $state(''),
     prompt = $state(false),
-    zoom = $state(26),
+    zoom = $state(18),
     query = $state(''),
     showFind = $state(false);
   type ToolbarDisplay = 'icons' | 'both' | 'labels';
@@ -38,7 +38,9 @@
   const formats = [
     ['bold', 'Bold'],
     ['italic', 'Italic'],
-    ['heading', 'Heading'],
+    ['heading1', 'Heading 1'],
+    ['heading2', 'Heading 2'],
+    ['heading3', 'Heading 3'],
     ['link', 'Link'],
     ['bullet', 'Bullet list'],
     ['ordered', 'Numbered list'],
@@ -225,7 +227,9 @@
       const start = editor.state.doc.lineAt(from).from,
         end = editor.state.doc.lineAt(to).to;
       const prefix: Record<string, string> = {
-        heading: '## ',
+        heading1: '# ',
+        heading2: '## ',
+        heading3: '### ',
         bullet: '- ',
         ordered: '1. ',
         task: '- [ ] ',
@@ -234,7 +238,11 @@
       insert = editor.state
         .sliceDoc(start, end)
         .split('\n')
-        .map((l) => prefix[kind] + l)
+        .map((l) =>
+          kind.startsWith('heading')
+            ? prefix[kind] + l.replace(/^#{1,6}\s+/, '')
+            : prefix[kind] + l,
+        )
         .join('\n');
       editor.dispatch({ changes: { from: start, to: end, insert } });
     }
