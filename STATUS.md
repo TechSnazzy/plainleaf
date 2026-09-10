@@ -1,5 +1,9 @@
 # Plainleaf status
 
+Latest minimal-UI update: launch and New start with a blank Untitled document (no welcome heading or sample text). Scrollbars are visually hidden across Write/Source while native overflow scrolling stays enabled. Browser long-document check confirmed scroll movement with scrollbar-width none. `npm run verify` passes with 17 frontend tests; Mac debug bundle rebuilt. Save any draft before restarting the running app.
+
+Latest update: Write defaults to 26px and can increase to 64px through the menu or Cmd/Ctrl + plus. Source/code sizing is unchanged. `npm run verify` passes with 16 frontend tests, including the new default/maximum-size regression test. The Mac debug bundle has been rebuilt; restart after saving any open draft to use it.
+
 Current milestone: reviewable local Mac prototype with editable Write/Source modes and sans-serif typography. Updated September 9, 2026.
 
 Implemented: Svelte interface, CodeMirror Source, Tiptap Write, conservative unsupported-Markdown protection, system/light/dark themes, formatting commands, native Rust open/save, atomic writes, external-change comparison on save, unsaved-change dialog, README, ignore rules, staged/history secret-check hooks and cross-platform CI configuration.

@@ -8,6 +8,17 @@
 * {
   box-sizing: border-box;
 }
+/* Keep native scrolling and keyboard navigation, but hide its visual chrome. */
+.app,
+.app * {
+  scrollbar-width: none;
+}
+.app::-webkit-scrollbar,
+.app *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
 body {
   margin: 0;
 }

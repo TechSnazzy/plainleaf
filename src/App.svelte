@@ -9,7 +9,6 @@
   import Editor from './Editor.svelte';
   import RichEditor, { type RichHandle } from './RichEditor.svelte';
   import {
-    welcome,
     isDirty,
     wordCount,
     validTheme,
@@ -17,19 +16,19 @@
     type Theme,
   } from './lib/document';
   type Loaded = { text: string; name: string };
-  let text = $state(welcome),
-    saved = $state(welcome),
-    name = $state('Welcome to Plainleaf');
+  let text = $state(''),
+    saved = $state(''),
+    name = $state('Untitled');
   let mode = $state<Mode>('read'),
     theme = $state<Theme>('system'),
     systemDark = $state(false);
-  let sample = $state(true),
+  let sample = $state(false),
     revision = $state(0),
     menu = $state(false),
     busy = $state(false);
   let error = $state(''),
     prompt = $state(false),
-    zoom = $state(18),
+    zoom = $state(26),
     query = $state(''),
     showFind = $state(false);
   let editor: EditorView | undefined;
@@ -260,7 +259,7 @@
       case '=':
       case '+':
         e.preventDefault();
-        zoom = Math.min(26, zoom + 1);
+        zoom = Math.min(64, zoom + 1);
         break;
       case '-':
         e.preventDefault();
@@ -407,7 +406,7 @@
           onclick={() => (zoom = Math.max(14, zoom - 1))}>−</button
         ><span>{zoom}</span><button
           aria-label="Increase text size"
-          onclick={() => (zoom = Math.min(26, zoom + 1))}>+</button
+          onclick={() => (zoom = Math.min(64, zoom + 1))}>+</button
         >
       </div>
     </aside>
