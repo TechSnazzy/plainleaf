@@ -1,5 +1,81 @@
 # Plainleaf status
 
+## Active work — September 10 Linux file-open and build
+
+Brought the Linux build to parity with the macOS Finder file-open behaviour, and verified it
+directly on Sean's Omarchy/Hyprland machine (full toolchain present: Node 26.7, Rust 1.98.1,
+webkit2gtk-4.1, gitleaks 8.x, live `wayland-1` session).
+
+**Why it was needed:** Tauri's `RunEvent::Opened` is macOS/iOS/Android-only, so Linux had no
+code path from an opened file to a loaded document. Separately, the Tauri Linux bundler
+writes `Exec=plainleaf` with no `%F` field code, so even a correct MIME association never
+passed the file path to the app.
+
+Rust (`src-tauri/`):
+- `Cargo.toml` adds `tauri-plugin-single-instance` 2.4.4 under a `cfg(target_os = "linux")`
+  target table only. macOS keeps its existing `RunEvent::Opened` path unchanged; Windows is
+  untouched (still no open-event handling).
+- `main.rs`: the macOS open handler's body is now a shared `stage_incoming(app, &Path)` that
+  validates the file with the same `validate_incoming` rules as the in-app Open command and
+  only *stages* it in `OpenState` — the active `Document` is never touched here. New pure
+  helper `first_file_arg(args)` pulls the file path out of an argv list (skips argv0 and
+  `-…` flags, first path wins). In `.setup()`, Linux-only: the single-instance plugin is
+  registered first, its callback routes a second launch's argv through `stage_incoming` and
+  focuses the `main` window; then this process's own `std::env::args_os()` is checked once
+  for the cold-launch case. Everything downstream — the `open-requested` /
+  `open-request-failed` events, `take_pending_open` / `accept_pending_open` /
+  `reject_pending_open`, and the frontend Save/Discard/Cancel prompt — is unchanged and
+  already platform-agnostic. No frontend code changed.
+- 2 new Rust unit tests for `first_file_arg` (skips program name + flags; `None` with no
+  path). Rust test count: 15.
+
+Packaging:
+- `src-tauri/linux/plainleaf.desktop` — a custom Handlebars desktop template with
+  `Exec={{exec}} %F` and `MimeType=text/markdown;text/x-markdown;`.
+- `tauri.conf.json` — `bundle.linux.deb.desktopTemplate` and `bundle.linux.rpm.desktopTemplate`
+  both point at it. Confirmed the generated `.deb`/`.rpm` `.desktop` now carries
+  `Exec=plainleaf %F` and the MimeType. AppImage has no template override in Tauri and also
+  still fails to bundle at `linuxdeploy` (pre-existing, unchanged by this work).
+- `README.md` documents the from-source `~/.local` install (binary + `.desktop` with `%F` +
+  icons + `update-desktop-database`); no install script is committed.
+
+**Verified in this session (run for real, not simulated):**
+- `npm run verify` — svelte-check 0/0, 25 frontend tests, build, working-tree secret scan: pass.
+- `cargo test --manifest-path src-tauri/Cargo.toml` — 15 pass.
+- `cargo build --release` — no warnings.
+- `npx tauri build` — `.deb` and `.rpm` bundled; generated `.desktop` verified. AppImage
+  fails at `linuxdeploy` as before.
+- `gitleaks git --redact --log-opts=--all` (full history) — clean.
+- Ran the release binary on the live Hyprland session (disposable fixtures only):
+  - Bare launch: window opens, editor renders, dark theme, toolbar (document + formatting
+    groups) present.
+  - Cold launch `plainleaf cold.md`: opens with the file's rendered content and title
+    "cold.md — Plainleaf", clean state — not a blank Untitled document.
+  - Second instance: with `cold.md` open, `plainleaf second.md` exited immediately (code 0),
+    no second window; the existing window switched to `second.md` and was focused.
+  - `gio open note.md` (the path Nautilus and other GTK file managers use): launches
+    Plainleaf with the file.
+  - The dirty-document Save/Discard/Cancel prompt and the invalid-external-file error path
+    were exercised through the frontend unit tests (`src/App.test.ts` "native external file
+    open": Cancel preserves the draft, Discard loads the new file, pre-listener pickup,
+    rejected file reported without touching the document), not re-clicked live — this
+    session's Wayland setup had no reliable way to inject a click/keystroke into the
+    webview, and that path is platform-agnostic frontend logic fed by the same
+    `open-requested` / `accept_pending_open` / `reject_pending_open` contract the live
+    second-instance test above exercised.
+
+**MIME-type detection caveat (observed, not a regression):** on this Arch system `file(1)`
+reports `.md` as `text/plain`, while shared-mime-info / `gio` report `text/markdown`. GTK
+file managers (Nautilus is what's installed) resolve `.md` correctly and open Plainleaf.
+Terminal `xdg-open note.md` uses `file(1)` and so may route `.md` to the `text/plain`
+handler instead. The custom `.desktop` (deb/rpm and the `~/.local` install) declares
+`text/markdown;text/x-markdown;`; making Plainleaf the `text/plain` handler would be too
+greedy and was not done.
+
+Sean's existing `~/.local` install from Sept 9 was refreshed to this build: the binary at
+`~/.local/bin/plainleaf` and `~/.local/share/applications/plainleaf.desktop` now use
+`Exec=… %F` (was `%U`) and `MimeType=text/markdown;text/x-markdown;`.
+
 ## Active work — September 10 icon, dark mode, and toolbar redesign
 
 Three visual changes, approved by Sean against a mocked-up preview before any code changed:

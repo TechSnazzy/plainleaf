@@ -13,3 +13,8 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 rfd = "0.15"
 tempfile = "3"
+
+# Linux has no `RunEvent::Opened`; a second launch's argv (the double-clicked
+# file) is routed into the running instance through the single-instance plugin.
+[target.'cfg(target_os = "linux")'.dependencies]
+tauri-plugin-single-instance = "2"

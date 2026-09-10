@@ -17,7 +17,9 @@ Manual checklist (record only observed outcomes):
 - [ ] Light/Dark/System and keyboard navigation work in the native app.
 - [ ] Malicious fixtures cannot navigate, execute or load remote assets.
 - [ ] Windows runtime checks.
-- [ ] Linux GNOME and KDE runtime checks.
+- [x] Linux runtime checks on Omarchy / Hyprland (Wayland). Release binary launches, editor
+      renders, cold-launch and second-instance `.md` open work; see the Linux section below.
+      GNOME and KDE not tested.
 - [ ] Cold-launch Finder double-click on a .md/.markdown file loads its content (not a blank Untitled document).
 - [ ] Finder double-click on a second file while Plainleaf is already running, with a clean document, replaces it.
 - [ ] Finder double-click on another file while the current document is dirty triggers Save/Discard/Cancel, and each choice behaves correctly.
@@ -33,3 +35,31 @@ September 9 checks: npm run verify passes; Svelte reports zero errors/warnings; 
 September 10 icon/dark-mode/toolbar redesign: approved against a mocked-up preview first, then implemented. svelte-check (0 errors) and the working-tree secret scan were run directly against the real project; npm test, npm run build, cargo test, the icon regeneration, the debug rebuild, and the full-history secret scan need the real Mac toolchain, so they're still pending a run of the verify-and-publish script -- see STATUS.md for whatever it reports once that's run. The three new manual checklist items above (icon, dark mode, toolbar) are unchecked because they're a visual check on Sean's own eyes, which this automated run can't do.
 
 September 10 Finder file-open fix: implementation and its new automated tests (5 Rust, 4 frontend) were run for real on Sean's Mac via an automated verify-and-publish script -- npm run verify (Svelte typecheck, all frontend tests, build, working-tree secret scan), cargo test --manifest-path src-tauri/Cargo.toml (13 tests), and a full-history gitleaks scan all passed; the app was rebuilt and its Info.plist was confirmed to declare the Markdown file association. The change is committed and pushed to main. The four new manual checklist items above (Finder cold launch, replace-while-running, dirty-document prompt, invalid file) remain unchecked because they cover hands-on Finder interaction, which this automated run did not perform -- see STATUS.md for the full explanation.
+
+## Linux file-open (September 10, Omarchy / Hyprland, Wayland)
+
+Run for real against the release binary on Sean's machine, disposable `.md` fixtures only.
+Environment: Hyprland on Arch (Omarchy), `wayland-1`, webkit2gtk-4.1 2.52. GNOME and KDE were
+not tested; the earlier "GNOME and KDE" checklist line has been corrected to reflect this.
+
+- [x] `npm run verify` (25 frontend), `cargo test` (15), `cargo build --release` (no
+      warnings), `npx tauri build` (deb + rpm bundle; generated `.desktop` has
+      `Exec=plainleaf %F` + `MimeType=text/markdown;text/x-markdown;`; AppImage still fails at
+      `linuxdeploy`, pre-existing), full-history gitleaks scan clean.
+- [x] Release binary launches on Hyprland; editor renders (dark theme observed; light not
+      toggled live).
+- [x] Cold launch: `plainleaf note.md` opens with the file's content and a clean state, not
+      a blank Untitled document.
+- [x] Second instance: with Plainleaf already running on a clean document, `plainleaf
+      other.md` — the second process exits immediately, the existing window switches to
+      `other.md` and is focused, no second window.
+- [~] Second instance with a dirty document triggers Save/Discard/Cancel — covered by
+      `src/App.test.ts` "native external file open" (Cancel preserves the draft; Discard
+      loads the new file); not re-clicked in the live window (no webview input injection
+      available this session).
+- [~] Invalid external file reports an error without changing the document — covered by the
+      same test block's `open-request-failed` case; Rust side has
+      `invalid_or_missing_incoming_files_are_rejected`.
+- [x] Desktop association via GTK file managers: `gio open note.md` (what Nautilus uses)
+      launches Plainleaf with the file. Terminal `xdg-open note.md` is unreliable because
+      `file(1)` reports `.md` as `text/plain` on this system — see STATUS.md caveat.

@@ -1,13 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use serde::Serialize;
 use std::{
+    ffi::OsString,
     fs,
     io::{Read, Write},
     path::{Path, PathBuf},
     sync::Mutex,
 };
 use tauri::Emitter;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use tauri::Manager;
 
 const MAX_BYTES: u64 = 10 * 1024 * 1024;
@@ -299,21 +300,17 @@ fn reject_pending_open(id: u64, open_state: tauri::State<Mutex<OpenState>>) -> R
     open_state.lock().map_err(|_| "Document is busy.")?.reject(id);
     Ok(())
 }
-/// Handle a macOS "open documents" event (Finder double-click, Open With, or
-/// a drag onto the Dock icon) for both cold launch and an already-running
-/// app. Only the first url is handled; any others are ignored rather than
-/// silently overwriting a succession of documents. The active document is
-/// never touched here -- the candidate is only staged, and the frontend must
-/// run its unsaved-changes prompt and explicitly accept it first.
-#[cfg(target_os = "macos")]
-fn handle_opened_urls(app: &tauri::AppHandle, urls: Vec<tauri::Url>) {
-    let Some(url) = urls.into_iter().next() else {
-        return;
-    };
-    let Ok(path) = url.to_file_path() else {
-        return;
-    };
-    match validate_incoming(&path) {
+/// Stage a file handed to Plainleaf from outside the app and let the frontend
+/// know. The candidate is validated with exactly the same rules as the in-app
+/// Open command and only *staged* -- the active document is never touched here.
+/// The frontend runs its unsaved-changes prompt and must explicitly accept the
+/// candidate (`accept_pending_open`) before it becomes the active document.
+///
+/// Used by the macOS `RunEvent::Opened` handler and, on Linux, by both the
+/// cold-launch argv check and the single-instance callback.
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn stage_incoming(app: &tauri::AppHandle, path: &Path) {
+    match validate_incoming(path) {
         Ok((path, text, name)) => {
             if let Some(open_state) = app.try_state::<Mutex<OpenState>>() {
                 if let Ok(mut open) = open_state.lock() {
@@ -327,11 +324,67 @@ fn handle_opened_urls(app: &tauri::AppHandle, urls: Vec<tauri::Url>) {
         }
     }
 }
+
+/// Pick the file path out of a set of command-line arguments: skip the program
+/// name (first entry) and any option-like `-…` tokens, and take the first
+/// remaining argument. Linux hands a double-clicked file to the app this way,
+/// both at cold launch (`std::env::args_os`) and via the single-instance
+/// plugin's callback. Only the first path is used; extras are ignored rather
+/// than silently overwriting a succession of documents.
+#[cfg(any(target_os = "linux", test))]
+fn first_file_arg<I: IntoIterator<Item = OsString>>(args: I) -> Option<PathBuf> {
+    args.into_iter()
+        .skip(1)
+        .find(|arg| !arg.to_string_lossy().starts_with('-'))
+        .map(PathBuf::from)
+}
+
+/// Handle a macOS "open documents" event (Finder double-click, Open With, or
+/// a drag onto the Dock icon) for both cold launch and an already-running app.
+/// Only the first url is handled.
+#[cfg(target_os = "macos")]
+fn handle_opened_urls(app: &tauri::AppHandle, urls: Vec<tauri::Url>) {
+    let Some(url) = urls.into_iter().next() else {
+        return;
+    };
+    let Ok(path) = url.to_file_path() else {
+        return;
+    };
+    stage_incoming(app, &path);
+}
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(Document::default()))
         .manage(Mutex::new(OpenState::default()))
+        .setup(|app| {
+            // Linux has no `RunEvent::Opened`. A double-clicked `.md` file
+            // arrives as a plain command-line argument instead: as this
+            // process's own argv at cold launch, or -- when Plainleaf is
+            // already running -- as the second launch's argv delivered to us
+            // by the single-instance plugin. Both go through `stage_incoming`,
+            // the same staging path macOS uses.
+            #[cfg(target_os = "linux")]
+            {
+                app.handle().plugin(tauri_plugin_single_instance::init(
+                    |app, argv, _cwd| {
+                        if let Some(path) =
+                            first_file_arg(argv.into_iter().map(OsString::from))
+                        {
+                            stage_incoming(app, &path);
+                        }
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.set_focus();
+                        }
+                    },
+                ))?;
+                if let Some(path) = first_file_arg(std::env::args_os()) {
+                    stage_incoming(app.handle(), &path);
+                }
+            }
+            let _ = app;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             new_document,
             open_document,
@@ -485,6 +538,19 @@ mod tests {
             .expect_err("a mismatched id should be rejected");
         assert!(error.contains("no longer waiting"));
         assert_eq!(doc.saved.as_deref(), Some("current text"));
+    }
+    #[test]
+    fn first_file_arg_skips_program_name_and_flags() {
+        let args = ["plainleaf", "--flag", "-x", "notes.md", "second.md"]
+            .into_iter()
+            .map(OsString::from);
+        assert_eq!(first_file_arg(args), Some(PathBuf::from("notes.md")));
+    }
+    #[test]
+    fn first_file_arg_is_none_without_a_path() {
+        let args = ["plainleaf", "--version"].into_iter().map(OsString::from);
+        assert_eq!(first_file_arg(args), None);
+        assert_eq!(first_file_arg(std::iter::empty::<OsString>()), None);
     }
     #[test]
     fn rejecting_pending_open_clears_it_without_touching_the_document() {

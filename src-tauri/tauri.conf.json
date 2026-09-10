@@ -36,6 +36,10 @@
     ],
     "shortDescription": "A quiet Markdown reader and editor",
     "category": "Productivity",
+    "linux": {
+      "deb": { "desktopTemplate": "linux/plainleaf.desktop" },
+      "rpm": { "desktopTemplate": "linux/plainleaf.desktop" }
+    },
     "fileAssociations": [
       {
         "ext": ["md", "markdown"],
