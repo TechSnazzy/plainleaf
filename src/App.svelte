@@ -35,6 +35,7 @@
   type ToolbarDisplay = 'icons' | 'both' | 'labels';
   let toolbarDisplay = $state<ToolbarDisplay>('icons');
   let settings = $state(false);
+  let headerMenu = $state(false);
   const formats = [
     ['bold', 'Bold'],
     ['italic', 'Italic'],
@@ -58,7 +59,7 @@
   function dismissPopovers(e: PointerEvent) {
     if (!(e.target instanceof Element) || e.target.closest('[data-popover]'))
       return;
-    menu = settings = false;
+    menu = settings = headerMenu = false;
   }
   let editor: EditorView | undefined;
   let rich: RichHandle | undefined;
@@ -254,6 +255,7 @@
       menu = false;
       showFind = false;
       settings = false;
+      headerMenu = false;
     }
     if (!(e.metaKey || e.ctrlKey) || prompt || busy) return;
     switch (e.key.toLowerCase()) {
@@ -518,6 +520,94 @@
           </aside>
         {/if}
       </div>
+    </div>
+    <div class="popover-anchor header-overflow" data-popover>
+      <button
+        class="tool-button"
+        aria-label="Header options"
+        title="Header options"
+        aria-expanded={headerMenu}
+        onclick={() => {
+          headerMenu = !headerMenu;
+          menu = settings = false;
+        }}><Icon name="header-menu" /></button
+      >
+      {#if headerMenu}
+        <aside class="popover header-menu" aria-label="Header options">
+          <div class="compact-section">
+            <span>Appearance</span>
+            <div class="compact-controls" role="group" aria-label="Appearance">
+              {#each ['light', 'dark', 'system'] as t}
+                <button
+                  class="tool-button"
+                  class:selected={theme === t}
+                  aria-label={`Use ${t} appearance`}
+                  aria-pressed={theme === t}
+                  onclick={() => setTheme(t as Theme)}><Icon name={t} /></button
+                >
+              {/each}
+            </div>
+          </div>
+          <div class="compact-section">
+            <span>Writing size</span>
+            <div class="compact-controls text-size">
+              <button
+                class="tool-button"
+                aria-label="Decrease text size"
+                disabled={zoom <= 14}
+                onclick={() => (zoom = Math.max(14, zoom - 1))}
+                ><Icon name="decrease" /></button
+              ><output aria-label="Compact writing size">{zoom}</output><button
+                class="tool-button"
+                aria-label="Increase text size"
+                disabled={zoom >= 64}
+                onclick={() => (zoom = Math.min(64, zoom + 1))}
+                ><Icon name="increase" /></button
+              >
+            </div>
+          </div>
+          <div class="compact-section">
+            <span>Mode</span>
+            <div class="mode-switch" aria-label="Compact document mode">
+              <button
+                class:active={mode === 'read'}
+                aria-pressed={mode === 'read'}
+                onclick={() => mode !== 'read' && toggle()}>Write</button
+              ><button
+                class:active={mode === 'edit'}
+                aria-pressed={mode === 'edit'}
+                onclick={() => mode !== 'edit' && toggle()}>Source</button
+              >
+            </div>
+          </div>
+          <fieldset class="compact-display">
+            <legend>Toolbar</legend>
+            {#each [['icons', 'Icons'], ['both', 'Both'], ['labels', 'Labels']] as [value, label]}
+              <label
+                ><input
+                  type="radio"
+                  name="compact-toolbar-display"
+                  {value}
+                  checked={toolbarDisplay === value}
+                  onchange={() => setToolbarDisplay(value as ToolbarDisplay)}
+                />{label}</label
+              >
+            {/each}
+          </fieldset>
+          <div class="compact-documents">
+            <button onclick={newDocument} disabled={busy}>New</button>
+            <button onclick={openDocument} disabled={busy}>Open…</button>
+            <button
+              onclick={() => action(async () => void (await save()))}
+              disabled={busy}>Save</button
+            >
+            <button
+              onclick={() => action(async () => void (await save(true)))}
+              disabled={busy}>Save as…</button
+            >
+          </div>
+        </aside>
+      {/if}
     </div>
   </header>
   {#if error}<div class="error" role="alert">

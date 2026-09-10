@@ -19,6 +19,7 @@
     increase: 'M5 12h14M12 5v14',
     settings: 'M4 6h16M4 12h16M4 18h16M8 4v4M16 10v4M10 16v4',
     more: 'M5 12h.01M12 12h.01M19 12h.01',
+    'header-menu': 'M5 7h14M5 12h14M5 17h14',
   };
 </script>
 

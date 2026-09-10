@@ -76,6 +76,19 @@ describe('two writing modes', () => {
       'labels',
     );
   });
+  it('provides a compact header menu for narrow windows', () => {
+    document
+      .querySelector<HTMLButtonElement>('[aria-label="Header options"]')!
+      .click();
+    flushSync();
+    const compact = document.querySelector(
+      '[aria-label="Header options"] + aside',
+    );
+    expect(compact?.textContent).toContain('Appearance');
+    expect(compact?.textContent).toContain('Writing size');
+    expect(compact?.textContent).toContain('Write');
+    expect(compact?.textContent).toContain('Save as…');
+  });
   it('starts blank and editable and toggles without dirtying the document', () => {
     expect(document.querySelector('.tiptap')?.textContent).toBe('');
     expect(document.querySelector('.document-title')).toBeNull();

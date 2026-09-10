@@ -164,6 +164,57 @@ button:hover {
 .popover-anchor {
   position: relative;
 }
+.header-overflow {
+  display: none;
+  flex: none;
+  margin-left: auto;
+}
+.header-menu {
+  width: 260px;
+  padding: 10px;
+}
+.compact-section {
+  min-height: 43px;
+  padding: 5px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+}
+.compact-controls {
+  display: flex;
+  align-items: center;
+}
+.compact-display {
+  border: 0;
+  margin: 3px 0;
+  padding: 9px 6px;
+  display: flex;
+  gap: 12px;
+  color: var(--muted);
+}
+.compact-display legend {
+  float: left;
+  margin-right: auto;
+}
+.compact-display label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+}
+.compact-display input {
+  accent-color: var(--accent);
+}
+.compact-documents {
+  border-top: 1px solid var(--line);
+  margin-top: 5px;
+  padding-top: 6px;
+}
+.compact-documents button {
+  width: 100%;
+  text-align: left;
+}
 main {
   position: relative;
   flex: 1;
@@ -506,6 +557,23 @@ dialog::backdrop {
   }
   footer {
     padding: 0 18px;
+  }
+}
+@media (max-width: 1050px) {
+  .app-header {
+    flex-wrap: nowrap;
+  }
+  .format-tools {
+    flex: 1;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .header-actions {
+    display: none;
+  }
+  .header-overflow {
+    display: block;
   }
 }
 @media (prefers-reduced-motion: reduce) {

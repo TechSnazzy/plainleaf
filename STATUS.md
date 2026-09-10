@@ -6,6 +6,8 @@ The user closed the unsaved draft, so disposable manual native testing may resum
 
 September 10 heading follow-up: the former single Heading command is now three explicit H1, H2, and H3 controls in Write and Source. In Source, changing a selected heading replaces an existing Markdown heading prefix instead of stacking another prefix. Keep this narrow behavior and the approved toolbar design intact.
 
+September 10 responsive-header follow-up: below 1050px, formatting remains in one non-wrapping row and the remaining header controls collapse into one minimalist dropdown. The dropdown contains appearance, writing size, Write/Source, toolbar display, and document actions. At very narrow widths the formatting row scrolls horizontally with its scrollbar hidden. Browser inspection confirmed the single-row layout and dropdown at the current half-window viewport; no document content was changed.
+
 ## Approved — September 10 design pass
 
 Sean approved the redesigned interface. This pass is complete and ready for its Git checkpoint. Next functional milestone: verify native Save/Save As/reopen, cancellation, unsaved close/quit, and refusal to overwrite externally modified files using disposable fixtures. Then address cross-mode undo/selection, followed by release packaging. Keep the approved visual design as the baseline.
