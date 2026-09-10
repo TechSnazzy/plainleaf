@@ -21,3 +21,4 @@ playwright-report/
 .cache/
 src-tauri/gen/
 run-verification-and-publish.command
+publish-docs-fix.command
