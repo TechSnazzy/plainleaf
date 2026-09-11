@@ -23,3 +23,4 @@ src-tauri/gen/
 run-verification-and-publish.command
 publish-docs-fix.command
 run-design-update-and-publish.command
+run-icon-v2-publish.command

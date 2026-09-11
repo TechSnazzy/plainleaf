@@ -24,7 +24,7 @@ Manual checklist (record only observed outcomes):
 - [ ] Finder double-click on a second file while Plainleaf is already running, with a clean document, replaces it.
 - [ ] Finder double-click on another file while the current document is dirty triggers Save/Discard/Cancel, and each choice behaves correctly.
 - [ ] An invalid external file (wrong extension, not UTF-8, oversized, deleted) fails safely without changing the current document.
-- [ ] The Dock/Finder icon shows the new black tile with the green leaf outline (not the old off-white icon or a cached stale one).
+- [ ] The Dock/Finder icon shows the black tile with the gradient-filled green leaf and black outline/veins (not the earlier green-outline-only version, the old off-white icon, or a cached stale one).
 - [ ] Dark mode reads as neutral space gray with a green accent, not the old green-tinted background/panels.
 - [ ] New / Open / Save / Save as are visible as icon buttons in the toolbar at normal window width, and the hamburger menu on a narrow window contains only appearance settings.
 
@@ -33,6 +33,8 @@ Native interaction automation repeatedly reported that the user changed the app;
 September 9 checks: npm run verify passes; Svelte reports zero errors/warnings; npm audit reports zero known vulnerabilities. Vite reports a large JavaScript chunk (~1.14 MB uncompressed), an optimization follow-up rather than a failed build. Rust dependency advisory audit remains outstanding.
 
 September 10 icon/dark-mode/toolbar redesign: approved against a mocked-up preview first, then implemented. svelte-check (0 errors) and the working-tree secret scan were run directly against the real project; npm test, npm run build, cargo test, the icon regeneration, the debug rebuild, and the full-history secret scan need the real Mac toolchain, so they're still pending a run of the verify-and-publish script -- see STATUS.md for whatever it reports once that's run. The three new manual checklist items above (icon, dark mode, toolbar) are unchecked because they're a visual check on Sean's own eyes, which this automated run can't do.
+
+September 11 icon revision: the leaf changed from a green outline on the black tile to a green gradient fill (light upper-left, deepening toward the lower-right), with the outline and vein lines switching from green to black so the linework reads as one layer on top of the fill. Approved against a mocked-up preview first. Still needs `npx tauri icon assets/icon.svg` to regenerate the platform icon set, plus the same verify/test/build/gitleaks pass as prior changes, on the real Mac toolchain.
 
 September 10 Finder file-open fix: implementation and its new automated tests (5 Rust, 4 frontend) were run for real on Sean's Mac via an automated verify-and-publish script -- npm run verify (Svelte typecheck, all frontend tests, build, working-tree secret scan), cargo test --manifest-path src-tauri/Cargo.toml (13 tests), and a full-history gitleaks scan all passed; the app was rebuilt and its Info.plist was confirmed to declare the Markdown file association. The change is committed and pushed to main. The four new manual checklist items above (Finder cold launch, replace-while-running, dirty-document prompt, invalid file) remain unchecked because they cover hands-on Finder interaction, which this automated run did not perform -- see STATUS.md for the full explanation.
 

@@ -1,5 +1,25 @@
 # Plainleaf status
 
+## Active work -- September 11 icon revision
+
+The leaf on the app icon (`assets/icon.svg`) changes from a plain green outline to a filled,
+skeuomorphic look: the leaf shape now carries a green gradient fill (`#a3e17c` upper-left
+deepening to `#1f3a18` lower-right), and both the outline stroke and the three vein lines
+switch from green (`#496d43`) to black so the linework reads as one layer sitting on top of
+the fill. The black tile background and the leaf's silhouette/shape are unchanged from the
+September 10 redesign.
+
+This went through a few passes on the vein geometry before landing: two attempts to tidy up
+the spine line's positioning were tried and shown to Sean as preview mockups, but he preferred
+the original proposal's look overall, so the shipped version keeps the original vein path
+(`m250 835 422-452M398 650l-29-242m150 120 211-31`) rather than either of the revised ones.
+
+**Verification status:** approved against a mocked-up preview; the SVG source change itself
+is applied to `assets/icon.svg`, but the platform icon set under `src-tauri/icons/` still
+needs regenerating via `npx tauri icon assets/icon.svg`, and this still needs the same
+verify/test/build/gitleaks pass as prior changes -- all of it needs the real Mac toolchain,
+so it's pending a run of the publish script.
+
 ## Active work — September 10 Linux file-open and build
 
 Brought the Linux build to parity with the macOS Finder file-open behaviour, and verified it
