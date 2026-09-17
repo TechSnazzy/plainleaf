@@ -32,7 +32,7 @@
     "@tiptap/markdown": "3.31.3",
     "@tiptap/starter-kit": "3.31.3",
     "dompurify": "3.4.15",
-    "marked": "18.0.12",
+    "marked": "18.0.13",
     "svelte": "5.57.0"
   },
   "devDependencies": {
